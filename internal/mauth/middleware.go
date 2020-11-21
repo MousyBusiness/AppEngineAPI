@@ -3,7 +3,7 @@ package mauth
 import (
 	"firebase.google.com/go/auth"
 	"github.com/gin-gonic/gin"
-	"github.com/mousybusiness/GoogleAppEngineAPI/internal/secrets"
+	"github.com/mousybusiness/AppEngineAPI/internal/secrets"
 	"log"
 	"net/http"
 	"strings"
