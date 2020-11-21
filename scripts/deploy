@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+help() {
+  echo -n '
+  Usage: ./deploy --version 1.0.0
+
+  --help) show this menu
+  --version) the deployment version in the format MAJOR.MINOR.PATCH
+  --project) what project you want to deploy to
+  --promote) immediately promote version to live
+  --canary) release 10%
+'
+  exit 1
+}
+
+while [[ -n "$1" ]]; do
+  case "$1" in
+  --help) help ;;
+  --version)
+    VERSION="$2"
+    shift
+    ;;
+  --project)
+    PROJECT="$2"
+    shift
+    ;;
+  --promote)
+    PROMOTE=true
+    ;;
+  --canary)
+    CANARY=true
+    ;;
+  esac
+  shift
+done
+
+# get the scripts directory
+DIR=$(dirname "$0")
+
+OLD_VERSION=$(gcloud app versions list | awk '{ print $2 }' | sort -k1.5n | head -n 1)
+
+# check variables have been defined
+if [[ -z "$VERSION" ]] ; then
+  PREFIX=$(echo "$OLD_VERSION" | sed 's/^\(.*-.*-\)\(.*\)$/\1/')
+  LATEST=$(echo "$OLD_VERSION" | sed 's/^\(.*-.*-\)\(.*\)$/\2/')
+  INCREMENTED=$(expr $(($LATEST + 1)))
+  VERSION=$(echo "${PREFIX}${INCREMENTED}" | sed 's/-/\./g')
+fi
+[[ -z "$PROJECT" ]] && echo "warning: project using gcloud default"
+
+echo "VERSION $VERSION"
+echo "PROJECT $PROJECT"
+echo "CANARY $CANARY"
+echo "PROMOTE $PROMOTE"
+
+# check the version is in the format v0.0.0
+if ! $(echo "$VERSION" | grep -qE "^v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$"); then
+  echo "error: invalid version provided, use syntax v0.0.1"
+  exit 1
+else
+  # change v0.0.0 to v0-0-0 for AppEngine requirements
+  VERSION=$(echo "$VERSION" | sed 's/\./-/g')
+  echo "version updated $VERSION"
+fi
+
+# default base command
+command="gcloud app deploy --appyaml="$DIR/../app.yaml" --quiet --version $VERSION"
+
+# conditionally add promote / no-promote
+[[ "$PROMOTE" == "true" ]] && command="$command --promote" || command="$command --no-promote"
+
+# call command
+eval "$command"
+
+# rollout canary
+if [[ "$CANARY" == "true" ]]; then
+  echo "running canary deployment"
+  gcloud app services set-traffic default --quiet --splits="$OLD_VERSION"=0.9,"$VERSION"=0.1
+fi

@@ -1,0 +1,6 @@
+cron:
+  - description: "do something"
+    url: /cron/dosomething
+    schedule: every 5 mins
+    timezone: Europe/London
+    target: default

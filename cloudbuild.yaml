@@ -1,0 +1,13 @@
+steps:
+  # build docker image from source code
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'build', '-t', 'eu.gcr.io/$PROJECT_ID/appengineapi:$COMMIT_SHA', '-t', 'eu.gcr.io/$PROJECT_ID/appengineapi:latest', '.' ]
+  # copy contents of image to cloud build /workspace file by mounting the /workspace volume
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'run', '--volume', '/workspace:/workspace', 'eu.gcr.io/$PROJECT_ID/appengineapi:latest' ]
+  # run our custom deployment script from /workspace
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: [ '-c', '/workspace/scripts/deploy --canary --project $PROJECT_ID' ]
+# publish images to container registry
+images: [ 'eu.gcr.io/$PROJECT_ID/appengineapi:$COMMIT_SHA', 'eu.gcr.io/$PROJECT_ID/appengineapi:latest' ]
