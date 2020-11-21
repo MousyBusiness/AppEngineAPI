@@ -1,4 +1,4 @@
-module github.com/mousybusiness/GoogleAppEngineAPI
+module github.com/mousybusiness/AppEngineAPI
 
 go 1.15
 
