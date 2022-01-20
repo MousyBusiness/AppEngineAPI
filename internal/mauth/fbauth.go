@@ -22,7 +22,7 @@ func InitAuth() (*auth.Client, error) {
 
 	client, errAuth := app.Auth(context.Background())
 	if errAuth != nil {
-		return nil, errors.Wrap(err, "error initializing firebase auth (creating client)")
+		return nil, errors.Wrap(errAuth, "error initializing firebase auth (creating client)")
 	}
 
 	return client, nil
